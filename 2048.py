@@ -42,20 +42,101 @@ def add_random_tile(board):
         board[r][c] = 2
     return True
 
+def transpose(board):
+    transposed = []
+    for col_index in range(len(board[0])):
+        new_row = []
+        for row in board:
+            new_row.append(row[col_index])
+        transposed.append(new_row)
+    return transposed
+
+def reverse_rows(board):
+    reversed_board = []
+    for row in board:
+        reversed_row = list(reversed(row))
+        reversed_board.append(reversed_row)
+    return reversed_board
+
+def compress_row(row):
+    new_row = []
+    for value in row:
+        if value != 0:
+            new_row.append(value)
+    changed = (len(new_row) != len(row))
+    while len(new_row) < SIZE:
+        new_row.append(0)
+    return new_row, changed
+
+def merge_row(row):
+    score = 0
+    new = row[:]
+    for i in range(SIZE - 1):
+        if new[i] != 0 and new[i] == new[i + 1]:
+            new[i] = new[i] * 2
+            new[i + 1] = 0
+            score += new[i]
+    return new, score
+
 def move_left(board):
-    pass
+    moved = False
+    score_gain = 0
+    new_board = []
+    for r in range(SIZE):
+        row = board[r]
+        compressed1, c1 = compress_row(row)
+        merged, s = merge_row(compressed1)
+        compressed2, c2 = compress_row(merged)
+        new_board.append(compressed2)
+        if c1 or c2 or compressed2 != row:
+            moved = True
+        score_gain += s
+    return new_board, moved, score_gain
 
 def move_right(board):
-    pass
+    reversed_board = reverse_rows(board)
+    moved_board, moved, score = move_left(reversed_board)
+    return reverse_rows(moved_board), moved, score
 
 def move_up(board):
-    pass
+    trans = transpose(board)
+    moved_board, moved, score = move_left(trans)
+    return transpose(moved_board), moved, score
 
 def move_down(board):
-    pass
+    trans = transpose(board)
+    moved_board, moved, score = move_right(trans)
+    return transpose(moved_board), moved, score
 
 def possible_moves(board):
-    pass
+    for r in range(SIZE):
+        for c in range(SIZE):
+            if board[r][c] == 0:
+                return True
+    for r in range(SIZE):
+        for c in range(SIZE-1):
+            if board[r][c] == board[r][c+1]:
+                return True
+    for c in range(SIZE):
+        for r in range(SIZE-1):
+            if board[r][c] == board[r+1][c]:
+                return True
+    return False
+
+def finish(text,score):
+    fade_surface = pygame.Surface((WIDTH, HEIGHT))
+    fade_surface.set_alpha(150)
+    fade_surface.fill((0, 0, 0))
+    screen.blit(fade_surface, (0, 0))
+    win_text = BIG_FONT.render(f"{text}", True, (255, 255, 255))
+    win_text_rect = win_text.get_rect(center=(WIDTH//2, HEIGHT//2 - 40))
+    screen.blit(win_text, win_text_rect)
+    score_text = FONT.render(f"Your Score: {score}", True, (255, 255, 255))
+    score_rect = score_text.get_rect(center=(WIDTH//2, HEIGHT//2))
+    screen.blit(score_text, score_rect)
+    restart_text = FONT.render("Press R to Restart", True, (255, 255, 255))
+    restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT//2 + 40))
+    screen.blit(restart_text, restart_rect)
 
 def draw_board(board, score):
     screen.fill(BACKGROUND)
@@ -121,11 +202,11 @@ def game_loop():
                 flag = True
                 break
         if flag== True:
-            win_text = FONT.render("You reached 2048! (R to restart)", True, (0,128,0))
-            screen.blit(win_text, (20, HEIGHT - 40))
+            text="You reached 2048!"
+            finish(text,score)
         if not possible_moves(board):
-            over_text = FONT.render("Game Over! (R to restart)", True, (128,0,0))
-            screen.blit(over_text, (20, HEIGHT - 40))
+            text="Game Over!"
+            finish(text,score)
         pygame.display.flip()
         clock.tick(FPS)
     pygame.quit()
