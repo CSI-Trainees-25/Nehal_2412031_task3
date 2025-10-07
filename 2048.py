@@ -44,7 +44,7 @@ def add_random_tile(board):
 
 def transpose(board):
     transposed = []
-    for col_index in range(len(board[0])):
+    for col_index in range(SIZE):
         new_row = []
         for row in board:
             new_row.append(row[col_index])
@@ -123,7 +123,7 @@ def possible_moves(board):
                 return True
     return False
 
-def finish(text,score):
+def finish(text,score,h_score):
     fade_surface = pygame.Surface((WIDTH, HEIGHT))
     fade_surface.set_alpha(150)
     fade_surface.fill((0, 0, 0))
@@ -134,8 +134,11 @@ def finish(text,score):
     score_text = FONT.render(f"Your Score: {score}", True, (255, 255, 255))
     score_rect = score_text.get_rect(center=(WIDTH//2, HEIGHT//2))
     screen.blit(score_text, score_rect)
+    h_score_text = FONT.render(f"High Score: {h_score}", True, (255, 255, 255))
+    h_score_rect = h_score_text.get_rect(center=(WIDTH//2, HEIGHT//2 + 40))
+    screen.blit(h_score_text, h_score_rect)
     restart_text = FONT.render("Press R to Restart", True, (255, 255, 255))
-    restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT//2 + 40))
+    restart_rect = restart_text.get_rect(center=(WIDTH//2, HEIGHT//2 + 80))
     screen.blit(restart_text, restart_rect)
 
 def draw_board(board, score):
@@ -145,13 +148,13 @@ def draw_board(board, score):
     score = FONT.render(f"Score: {score}", True, (119,110,101))
     screen.blit(score, (WIDTH - 150, 30))
     pygame.draw.rect(screen, GRID_BG, (MARGIN, BOARD_TOP, WIDTH - 2*MARGIN, WIDTH - 2*MARGIN), border_radius=8)
-    cell_size = (WIDTH - 2*MARGIN - (SIZE+1)*MARGIN) // SIZE
+    tile_size = (WIDTH - 2*MARGIN - (SIZE+1)*MARGIN) // SIZE
     for r in range(SIZE):
         for c in range(SIZE):
             val = board[r][c]
-            x = MARGIN + MARGIN + c*(cell_size+MARGIN)
-            y = BOARD_TOP + MARGIN + r*(cell_size+MARGIN)
-            rect = pygame.Rect(x, y, cell_size, cell_size)
+            x = MARGIN + MARGIN + c*(tile_size+MARGIN)
+            y = BOARD_TOP + MARGIN + r*(tile_size+MARGIN)
+            rect = pygame.Rect(x, y, tile_size, tile_size)
             color = TILE_COLORS.get(val, EMPTY) if val!=0 else EMPTY
             pygame.draw.rect(screen, color, rect, border_radius=6)
             if val != 0:
@@ -161,7 +164,7 @@ def draw_board(board, score):
 
 def game_loop():
     board = new_board()
-    score = 0
+    score = h_score= 0
     add_random_tile(board)
     add_random_tile(board)
     running = True
@@ -169,7 +172,7 @@ def game_loop():
         moved = False
         gain = 0
         for event in pygame.event.get():
-            if event.type == pygame.QUIT:
+            if event.type == QUIT:
                 running = False
             elif event.type == KEYDOWN:
                 if event.key == K_q:
@@ -196,6 +199,8 @@ def game_loop():
                     score += gain
                     add_random_tile(board)
         draw_board(board, score)
+        if score>h_score:
+            h_score=score
         flag = False
         for row in board:
             if 2048 in row:
@@ -203,10 +208,10 @@ def game_loop():
                 break
         if flag== True:
             text="You reached 2048!"
-            finish(text,score)
+            finish(text,score,h_score)
         if not possible_moves(board):
             text="Game Over!"
-            finish(text,score)
+            finish(text,score,h_score)
         pygame.display.flip()
         clock.tick(FPS)
     pygame.quit()
